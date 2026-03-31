@@ -95,7 +95,7 @@ skills-tui (single binary)
 
 ### Repo Grouping via Lock File
 
-The `skills` package maintains a lock file (`~/.agents/.skill-lock.json`) that records which plugin/repo each skill belongs to. On startup, `skills-tui` reads it via `getAllLockedSkills()` to group skills under their source repos. The lock file path is an implementation detail of the `skills` package — `skills-tui` never hardcodes the path, always accessing it through the API. This is the **only** use of the lock file — all enable/disable state comes from symlink presence.
+The `skills` package maintains a lock file (`~/.agents/.skill-lock.json`) that records which plugin/repo each skill belongs to. On startup, `skills-tui` reads it via `getAllLockedSkills()` to group skills under their source repos. Since the `skills` package has no library exports, `skills-tui` reads the lock file directly at its known path (`~/.agents/.skill-lock.json`, or `$XDG_STATE_HOME/skills/.skill-lock.json` if set). This is the **only** use of the lock file — all enable/disable state comes from symlink presence.
 
 ## Enable/Disable Mechanism
 

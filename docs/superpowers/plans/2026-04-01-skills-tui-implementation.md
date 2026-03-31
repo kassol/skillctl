@@ -664,7 +664,7 @@ git commit -m "feat: add scanner service (skill discovery, lock file parsing, ag
 ```typescript
 // tests/linker.test.ts
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { enableSkill, disableSkill, isManaged } from "../src/services/linker";
+import { enableSkill, disableSkill, removeSkill, isManaged } from "../src/services/linker";
 import { mkdtemp, rm, mkdir, writeFile, symlink, lstat, readlink } from "fs/promises";
 import { join } from "path";
 import { tmpdir } from "os";
@@ -2321,7 +2321,7 @@ const home = homedir();
 
 export const KNOWN_AGENTS: AgentInfo[] = [
   { name: "claude-code", displayName: "Claude Code", globalSkillsDir: join(home, ".claude", "skills") },
-  { name: "codex", displayName: "Codex", globalSkillsDir: join(home, ".codex", "skills") },
+  { name: "codex", displayName: "Codex", globalSkillsDir: join(home, ".openai-codex", "skills") },
   { name: "cursor", displayName: "Cursor", globalSkillsDir: join(home, ".cursor", "skills") },
   { name: "gemini-cli", displayName: "Gemini CLI", globalSkillsDir: join(home, ".gemini", "skills") },
   { name: "opencode", displayName: "OpenCode", globalSkillsDir: join(home, ".config", "opencode", "skills") },
