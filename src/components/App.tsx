@@ -129,10 +129,14 @@ export function App() {
   const handleSearchSubmit = useCallback(
     async (value: string) => {
       const s = storeRef.current.getState();
-      // If in repo add mode (focusedColumn === 0 and not market), treat as add repo
-      if (s.focusedColumn === 0 && !s.isMarketMode && /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(value)) {
+      if (s.overlayMode === "add-repo") {
+        // Add repo mode — validate and call addRepo
         s.setSearchActive(false);
         setSearchInput("");
+        if (!/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(value)) {
+          s.setStatusMessage(`Invalid format: "${value}". Expected "owner/repo".`);
+          return;
+        }
         s.setStatusMessage(`Adding ${value}...`);
         try {
           const { addRepo: addRepoCmd } = await import("../services/repo.js");
@@ -146,7 +150,7 @@ export function App() {
         }
         return;
       }
-      // Normal search
+      // Normal search mode
       s.setSearchQuery(value);
       s.setSearchActive(false);
       setSearchInput("");

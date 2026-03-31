@@ -13,6 +13,7 @@ export interface SkillsState {
   loading: boolean;
   searchQuery: string;
   searchActive: boolean;
+  overlayMode: "search" | "add-repo";
   confirmAction: { type: string; message: string; onConfirm: () => void } | null;
   statusMessage: string;
 
@@ -28,6 +29,7 @@ export interface SkillsState {
   setLoading: (loading: boolean) => void;
   setSearchQuery: (query: string) => void;
   setSearchActive: (active: boolean) => void;
+  setOverlayMode: (mode: "search" | "add-repo") => void;
   setConfirmAction: (action: SkillsState["confirmAction"]) => void;
   setStatusMessage: (msg: string) => void;
 }
@@ -45,6 +47,7 @@ export function createSkillsStore() {
     loading: true,
     searchQuery: "",
     searchActive: false,
+    overlayMode: "search" as const,
     confirmAction: null,
     statusMessage: "",
 
@@ -60,6 +63,7 @@ export function createSkillsStore() {
     setLoading: (loading) => set({ loading }),
     setSearchQuery: (searchQuery) => set({ searchQuery }),
     setSearchActive: (searchActive) => set({ searchActive }),
+    setOverlayMode: (overlayMode) => set({ overlayMode }),
     setConfirmAction: (confirmAction) => set({ confirmAction }),
     setStatusMessage: (statusMessage) => set({ statusMessage }),
   }));

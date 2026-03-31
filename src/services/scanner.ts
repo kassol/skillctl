@@ -1,5 +1,6 @@
 import { lstat, readdir, readFile, realpath } from "node:fs/promises";
 import { join } from "node:path";
+import { isSubPath } from "./linker.js";
 import matter from "gray-matter";
 import type { AgentBinding, AgentInfo, LocalSkill } from "../types.js";
 
@@ -48,7 +49,7 @@ export async function resolveAgentBindings(
         linked = true;
       } else if (stat.isDirectory()) {
         const resolved = await realpath(linkPath);
-        linked = resolved.startsWith(canonicalRoot);
+        linked = isSubPath(canonicalRoot, resolved);
       }
     } catch {
       /* not linked */
@@ -93,7 +94,7 @@ export async function scanInstalledSkills(
           realpath(dirPath),
           realpath(canonicalRoot),
         ]);
-        managed = resolved.startsWith(canonicalReal);
+        managed = isSubPath(canonicalReal, resolved);
       } catch {
         managed = false;
       }

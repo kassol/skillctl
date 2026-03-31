@@ -77,7 +77,7 @@ export async function removeSkill(
         } catch {
           resolved = rawResolved;
         }
-        if (resolved.startsWith(root)) {
+        if (isSubPath(root, resolved)) {
           await rm(linkPath);
         }
       }
@@ -86,7 +86,7 @@ export async function removeSkill(
     }
   }
   const resolved = await realpath(canonicalPath);
-  if (resolved.startsWith(root)) {
+  if (isSubPath(root, resolved)) {
     await rm(canonicalPath, { recursive: true, force: true });
   }
 }

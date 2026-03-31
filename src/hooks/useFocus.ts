@@ -39,6 +39,7 @@ export function useFocus({
 
       // Search activation
       if (input === "/") {
+        state.setOverlayMode("search");
         state.setSearchActive(true);
         return;
       }
@@ -59,8 +60,9 @@ export function useFocus({
         return;
       }
 
-      // Add repo — opens search overlay, App handles the actual install on submit
+      // Add repo — opens overlay in add-repo mode
       if (input === "a" && state.focusedColumn === 0 && !state.isMarketMode) {
+        state.setOverlayMode("add-repo");
         state.setStatusMessage("Enter owner/repo to add");
         state.setSearchActive(true);
         return;
@@ -92,8 +94,8 @@ export function useFocus({
         return;
       }
 
-      // Delete
-      if (input === "x") {
+      // Delete — only from skill or detail column
+      if (input === "x" && (state.focusedColumn === 1 || state.focusedColumn === 2) && !state.isMarketMode) {
         handleDelete(state, currentSkills, onReload);
         return;
       }
