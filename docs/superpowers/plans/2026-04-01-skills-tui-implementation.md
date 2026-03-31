@@ -1073,11 +1073,27 @@ export function buildRemoveCommand(skillName: string, agents: AgentType[]): stri
   return cmd;
 }
 
+const SOURCE_PATTERN = /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/;
+
+function validateSource(source: string): void {
+  if (!SOURCE_PATTERN.test(source)) {
+    throw new Error(`Invalid source format: "${source}". Expected "owner/repo".`);
+  }
+}
+
+export function checkNpxAvailable(): boolean {
+  try {
+    const result = Bun.spawnSync(["npx", "--version"], { stdio: ["ignore", "pipe", "pipe"] });
+    return result.exitCode === 0;
+  } catch {
+    return false;
+  }
+}
+
 export async function execCommand(args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
     const proc = spawn(args[0], args.slice(1), {
       stdio: ["ignore", "pipe", "pipe"],
-      shell: true,
     });
 
     let stdout = "";
@@ -1093,6 +1109,7 @@ export async function execCommand(args: string[]): Promise<{ code: number; stdou
 }
 
 export async function addRepo(source: string, agents: AgentType[], skill?: string): Promise<void> {
+  validateSource(source);
   const cmd = buildAddCommand(source, agents, skill);
   const result = await execCommand(cmd);
   if (result.code !== 0) {
@@ -1100,11 +1117,11 @@ export async function addRepo(source: string, agents: AgentType[], skill?: strin
   }
 }
 
-export async function syncRepos(): Promise<void> {
+export async function updateAll(): Promise<void> {
   const cmd = buildSyncCommand();
   const result = await execCommand(cmd);
   if (result.code !== 0) {
-    throw new Error(`Failed to sync: ${result.stderr}`);
+    throw new Error(`Failed to update: ${result.stderr}`);
   }
 }
 ```
@@ -1670,7 +1687,7 @@ interface UseFocusOptions {
   onEnableAll: () => void;
   onDisableAll: () => void;
   onDelete: () => void;
-  onUpdate: () => void;
+  onUpdateAll: () => void;
   onEnter: () => void;
   onToggle: () => void;
   getListLength: (column: number) => number;
@@ -1726,7 +1743,7 @@ export function useKeyboard(opts: UseFocusOptions) {
     if (input === "D") { opts.onDisableAll(); return; }
     if (input === "E") { opts.onEnableAll(); return; }
     if (input === "x") { opts.onDelete(); return; }
-    if (input === "u") { opts.onUpdate(); return; }
+    if (input === "u") { opts.onUpdateAll(); return; }
     if (input === " ") { opts.onToggle(); return; } // Space = toggle current agent binding
   });
 }
@@ -2225,6 +2242,7 @@ jobs:
             homepage "https://github.com/kassol/skills-tui"
             version "${{ steps.release.outputs.version }}"
             license "MIT"
+            depends_on "node"
 
             on_macos do
               if Hardware::CPU.arm?
@@ -2302,10 +2320,18 @@ git commit -m "docs: add README, AGENTS.md, and CONTRIBUTING guide"
 
 ```typescript
 // Add to top of src/app.tsx, before render()
+import { checkNpxAvailable } from "./services/repo.js";
+
 const args = process.argv.slice(2);
 if (args.includes("--version") || args.includes("-v")) {
   console.log("skills-tui v0.1.0");
   process.exit(0);
+}
+
+if (!checkNpxAvailable()) {
+  console.error("skills-tui requires Node.js and npx for add/sync/remove operations.");
+  console.error("Install Node.js: https://nodejs.org/");
+  // Continue — read-only features (browse, enable/disable) still work
 }
 ```
 
@@ -2319,13 +2345,15 @@ import type { AgentInfo, AgentType } from "./types";
 
 const home = homedir();
 
+// Paths synced from vercel-labs/skills src/agents.ts.
+// When upstream changes, re-sync with: gh api repos/vercel-labs/skills/contents/src/agents.ts
 export const KNOWN_AGENTS: AgentInfo[] = [
   { name: "claude-code", displayName: "Claude Code", globalSkillsDir: join(home, ".claude", "skills") },
-  { name: "codex", displayName: "Codex", globalSkillsDir: join(home, ".openai-codex", "skills") },
+  { name: "codex", displayName: "Codex", globalSkillsDir: join(home, ".codex", "skills") },
   { name: "cursor", displayName: "Cursor", globalSkillsDir: join(home, ".cursor", "skills") },
   { name: "gemini-cli", displayName: "Gemini CLI", globalSkillsDir: join(home, ".gemini", "skills") },
   { name: "opencode", displayName: "OpenCode", globalSkillsDir: join(home, ".config", "opencode", "skills") },
-  { name: "windsurf", displayName: "Windsurf", globalSkillsDir: join(home, ".windsurf", "skills") },
+  { name: "windsurf", displayName: "Windsurf", globalSkillsDir: join(home, ".codeium", "windsurf", "skills") },
   { name: "amp", displayName: "Amp", globalSkillsDir: join(home, ".config", "agents", "skills") },
   { name: "goose", displayName: "Goose", globalSkillsDir: join(home, ".config", "goose", "skills") },
   { name: "roo", displayName: "Roo", globalSkillsDir: join(home, ".roo", "skills") },

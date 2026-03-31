@@ -51,7 +51,7 @@ interface AgentBinding {
 // Full list imported from vercel-labs/skills `agents` config at runtime.
 // Key agents:
 //   claude-code → ~/.claude/skills/
-//   codex       → ~/.openai-codex/skills/
+//   codex       → ~/.codex/skills/
 //   cursor      → ~/.cursor/skills/
 //   gemini-cli  → ~/.gemini/skills/
 type AgentType = "claude-code" | "codex" | "cursor" | /* ... 40+ from skills package */;
@@ -174,7 +174,7 @@ Non-managed entries are displayed in the UI (dimmed, with a "manual" badge) but 
 | `E` | Enable skill for **all** `defaultAgents` |
 | `x` | Delete skill/repo (with confirmation) |
 | `Space` | Toggle agent binding (same as `d`/`e` for highlighted agent) |
-| `u` | Update selected repo's skills |
+| `u` | Update all installed skills (global) |
 | `q` / `Ctrl+C` | Quit |
 
 ### Market Mode
@@ -204,7 +204,7 @@ When "Market" is selected in the left column, the center column switches to skil
 | Toggle agent binding | `Space` | Check/uncheck agent in Detail panel, operate symlinks |
 | Add repo | `a` (RepoList focused) | Input `owner/repo`, call `runAdd()` with `defaultAgents` |
 | Delete skill/repo | `x` | Remove source + all symlinks, with confirm dialog |
-| Update repo | `u` | Call `runSync()` to pull latest, update `repo.lastSynced` |
+| Update all | `u` | Call `npx skills update` to pull latest for all repos, update `lastSynced` |
 | Market search | `/` in Market | Call `skills.sh/api/search`, select to install |
 | Local filter | `/` in Repos/Skills | Frontend fuzzy match, realtime filter |
 
@@ -235,7 +235,7 @@ Config stores only TUI-specific state. Skill installation state is derived entir
 
 ## Tech Stack
 
-- **Runtime**: Bun
+- **Runtime**: Bun (requires Node.js/npx for add/sync/remove operations)
 - **UI**: ink (React for CLI)
 - **State**: zustand
 - **Linting**: Biome
