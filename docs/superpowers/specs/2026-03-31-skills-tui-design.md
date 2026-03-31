@@ -22,6 +22,7 @@ interface Repo {
   url: string;             // "https://github.com/vercel-labs/agent-skills"
   skills: LocalSkill[];    // installed skills from this repo
   skillCount: number;      // total skill count (including uninstalled)
+  lastSynced?: Date;       // last update timestamp
 }
 
 interface LocalSkill {
@@ -30,7 +31,7 @@ interface LocalSkill {
   repo: string;            // owning repo source
   canonicalPath: string;   // ~/.agents/skills/frontend-design/
   agents: AgentBinding[];  // agent bindings
-  enabled: boolean;        // whether any symlink exists
+  get enabled(): boolean;  // computed: any AgentBinding.linked === true
 }
 
 interface AgentBinding {
@@ -38,6 +39,15 @@ interface AgentBinding {
   linked: boolean;         // symlink exists in agent's skills dir
   linkPath: string;        // e.g., ~/.claude/skills/frontend-design
 }
+
+// Supported agents and their skill directories
+// Full list imported from vercel-labs/skills `agents` config at runtime.
+// Key agents:
+//   claude-code → ~/.claude/skills/
+//   codex       → ~/.openai-codex/skills/
+//   cursor      → ~/.cursor/skills/
+//   gemini-cli  → ~/.gemini/skills/
+type AgentType = "claude-code" | "codex" | "cursor" | /* ... 40+ from skills package */;
 ```
 
 ## Architecture
@@ -60,9 +70,12 @@ Referenced as a dependency (`"skills": "^1.4.6"`), not forked.
 
 **Reused from skills package:**
 - `searchSkillsAPI()` — marketplace search
-- `agents` config — agent name/path mappings
+- `agents` config — agent name/path mappings (including `globalSkillsDir` for each agent)
 - `parseSkillMd()` — SKILL.md parsing
 - `matter()` (gray-matter) — frontmatter extraction
+- `runAdd()` — install skills from a repo source
+- `runSync()` — update installed skills to latest
+- `getAllLockedSkills()` — read `skill-lock.json` for repo grouping (see below)
 
 **Implemented directly:**
 - Symlink scanning/creation/deletion — simpler than going through skills' install pipeline
@@ -70,6 +83,10 @@ Referenced as a dependency (`"skills": "^1.4.6"`), not forked.
 - Config file management
 
 If needed functions are not exported, preference is to upstream a PR. Fallback is direct filesystem implementation (scanning symlinks and parsing SKILL.md are straightforward).
+
+### Repo Grouping via skill-lock.json
+
+The `skills` package maintains `~/.agents/skill-lock.json` that records which plugin/repo each skill belongs to. On startup, `skills-tui` reads this lock file via `getAllLockedSkills()` to group skills under their source repos. This is the **only** use of the lock file — all enable/disable state comes from symlink presence.
 
 ## Enable/Disable Mechanism
 
@@ -142,18 +159,32 @@ Operations:
 
 ### Market Mode
 
-When "Market" is selected in the left column, the center column switches to skills.sh search results, and the right column shows remote skill detail with a one-click install action. Search calls `skills.sh/api/search` with 150ms debounce.
+When "Market" is selected in the left column, the center column switches to skills.sh search results, and the right column shows remote skill detail with install action. Search calls `skills.sh/api/search` with 150ms debounce.
+
+**Market install flow:**
+1. User selects a skill from search results, presses `Enter`
+2. Confirm dialog shows skill name + source repo
+3. On confirm, calls `runAdd(source, { skill: [name], global: true, agent: defaultAgents })`
+4. Skill is cloned to `~/.agents/skills/<name>/`, symlinks created for `defaultAgents`
+5. Config's `repos` list updated if this is a new repo source
+6. UI refreshes, new skill appears in Repos view
+
+### Search Behavior
+
+`<SearchOverlay />` is a single component with context-aware behavior:
+- **In Repos/Skills columns**: local fuzzy filter over current list, results inline. Esc restores unfiltered view, focus stays on current column.
+- **In Market column**: calls `skills.sh/api/search`, results replace the skill list. Esc clears search, focus stays on Market.
 
 ## Feature Matrix
 
 | Feature | Trigger | Implementation |
 |---------|---------|----------------|
-| List installed skills | Startup | Scan agent dir symlinks + skill-lock.json for repo grouping |
+| List installed skills | Startup | Scan agent dir symlinks + `getAllLockedSkills()` for repo grouping |
 | Enable/disable skill | `e` / `d` | Create/delete symlinks in target agent dirs |
 | Toggle agent binding | `Space` | Check/uncheck agent in Detail panel, operate symlinks |
-| Add repo | `a` | Input `owner/repo`, call `runAdd()` to install all skills |
+| Add repo | `a` (RepoList focused) | Input `owner/repo`, call `runAdd()` with `defaultAgents` |
 | Delete skill/repo | `x` | Remove source + all symlinks, with confirm dialog |
-| Update repo | `u` | Call `runSync()` to pull latest |
+| Update repo | `u` | Call `runSync()` to pull latest, update `repo.lastSynced` |
 | Market search | `/` in Market | Call `skills.sh/api/search`, select to install |
 | Local filter | `/` in Repos/Skills | Frontend fuzzy match, realtime filter |
 
@@ -161,7 +192,7 @@ When "Market" is selected in the left column, the center column switches to skil
 
 - **Dangling symlink** (source deleted) — mark as `broken`, red indicator in Detail
 - **skills.sh unreachable** — Market shows offline status, local features unaffected
-- **Terminal too narrow** — auto-hide right column; at extreme widths show skill list only
+- **Terminal too narrow** — below 100 cols: hide Detail panel (two columns). Below 50 cols: show only the focused column
 
 ## Configuration
 
@@ -177,6 +208,10 @@ When "Market" is selected in the left column, the center column switches to skil
 ```
 
 Config stores only TUI-specific state. Skill installation state is derived entirely from filesystem symlinks.
+
+### Canonical Directory
+
+`~/.agents/skills/` is the canonical source directory, created and managed by the `skills` package. Each agent's skill dir (e.g., `~/.claude/skills/`) contains symlinks pointing into this canonical dir. `skills-tui` reads from it but does not own its creation — the `skills` package handles that via `runAdd()`.
 
 ## Tech Stack
 
@@ -209,6 +244,7 @@ skills-tui/
 │   ├── services/
 │   │   ├── scanner.ts
 │   │   ├── linker.ts
+│   │   ├── repo.ts
 │   │   ├── market.ts
 │   │   └── config.ts
 │   └── types.ts
