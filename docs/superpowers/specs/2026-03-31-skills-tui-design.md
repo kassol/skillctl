@@ -31,8 +31,15 @@ interface LocalSkill {
   repo: string;            // owning repo source
   canonicalPath: string;   // ~/.agents/skills/frontend-design/
   agents: AgentBinding[];  // agent bindings
+  managed: boolean;        // true if canonicalPath resolves inside CANONICAL_ROOT
   get enabled(): boolean;  // computed: any AgentBinding.linked === true
 }
+
+// Skill identity: (repo, name) pair. Two repos may ship a skill with the
+// same `name`; the skills package resolves this by storing one copy per name
+// in ~/.agents/skills/. If a conflict is detected at install time (different
+// repo already owns that name), skills-tui refuses the install and surfaces
+// the conflict to the user rather than silently overwriting.
 
 interface AgentBinding {
   agent: AgentType;        // "claude-code" | "codex" | ...
@@ -75,7 +82,7 @@ Referenced as a dependency (`"skills": "^1.4.6"`), not forked.
 - `matter()` (gray-matter) — frontmatter extraction
 - `runAdd()` — install skills from a repo source
 - `runSync()` — update installed skills to latest
-- `getAllLockedSkills()` — read `skill-lock.json` for repo grouping (see below)
+- `getAllLockedSkills()` — read lock file for repo grouping (see below)
 
 **Implemented directly:**
 - Symlink scanning/creation/deletion — simpler than going through skills' install pipeline
@@ -84,9 +91,9 @@ Referenced as a dependency (`"skills": "^1.4.6"`), not forked.
 
 If needed functions are not exported, preference is to upstream a PR. Fallback is direct filesystem implementation (scanning symlinks and parsing SKILL.md are straightforward).
 
-### Repo Grouping via skill-lock.json
+### Repo Grouping via Lock File
 
-The `skills` package maintains `~/.agents/skill-lock.json` that records which plugin/repo each skill belongs to. On startup, `skills-tui` reads this lock file via `getAllLockedSkills()` to group skills under their source repos. This is the **only** use of the lock file — all enable/disable state comes from symlink presence.
+The `skills` package maintains a lock file (`~/.agents/.skill-lock.json`) that records which plugin/repo each skill belongs to. On startup, `skills-tui` reads it via `getAllLockedSkills()` to group skills under their source repos. The lock file path is an implementation detail of the `skills` package — `skills-tui` never hardcodes the path, always accessing it through the API. This is the **only** use of the lock file — all enable/disable state comes from symlink presence.
 
 ## Enable/Disable Mechanism
 
@@ -101,6 +108,15 @@ Operations:
   enable  → recreate symlink
   remove  → delete source file + all symlinks (with confirmation)
 ```
+
+### Ownership Verification
+
+Before any symlink operation (disable/enable/remove), `skills-tui` validates:
+
+1. **Managed check**: `realpath(symlink)` must resolve to a path inside `~/.agents/skills/` (the canonical root). Symlinks pointing elsewhere are marked `managed: false` and excluded from bulk operations.
+2. **Lock file check**: the skill must have an entry in `getAllLockedSkills()`. Orphaned skills (present on disk but absent from lock file) are shown with a warning indicator but not auto-operated.
+
+Non-managed entries are displayed in the UI (dimmed, with a "manual" badge) but `d`/`e`/`x` operations are blocked on them. The user can still inspect their details.
 
 ## UI Design
 
@@ -150,10 +166,12 @@ Operations:
 | `Enter` | Expand / enter |
 | `/` | Search (local filter + market search) |
 | `a` | Add repo source |
-| `d` | Disable selected skill (remove symlink) |
-| `e` | Enable selected skill (recreate symlink) |
+| `d` | Disable skill for **current highlighted agent** in Detail panel |
+| `e` | Enable skill for **current highlighted agent** in Detail panel |
+| `D` | Disable skill for **all** agents (with confirmation) |
+| `E` | Enable skill for **all** `defaultAgents` |
 | `x` | Delete skill/repo (with confirmation) |
-| `Space` | Toggle agent binding in Detail panel |
+| `Space` | Toggle agent binding (same as `d`/`e` for highlighted agent) |
 | `u` | Update selected repo's skills |
 | `q` / `Ctrl+C` | Quit |
 
@@ -180,7 +198,7 @@ When "Market" is selected in the left column, the center column switches to skil
 | Feature | Trigger | Implementation |
 |---------|---------|----------------|
 | List installed skills | Startup | Scan agent dir symlinks + `getAllLockedSkills()` for repo grouping |
-| Enable/disable skill | `e` / `d` | Create/delete symlinks in target agent dirs |
+| Enable/disable skill | `e`/`d` (single agent), `E`/`D` (all agents) | Create/delete symlinks; single-agent ops need Detail panel focus with agent highlighted |
 | Toggle agent binding | `Space` | Check/uncheck agent in Detail panel, operate symlinks |
 | Add repo | `a` (RepoList focused) | Input `owner/repo`, call `runAdd()` with `defaultAgents` |
 | Delete skill/repo | `x` | Remove source + all symlinks, with confirm dialog |
