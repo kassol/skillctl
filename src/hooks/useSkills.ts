@@ -1,5 +1,5 @@
 import { createStore } from "zustand/vanilla";
-import type { Repo, LocalSkill, MarketSkill, Config } from "../types.js";
+import type { Config, MarketSkill, Repo } from "../types.js";
 
 export interface SkillsState {
   repos: Repo[];

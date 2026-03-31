@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { scanInstalledSkills, parseLockFile, resolveAgentBindings } from "../src/services/scanner";
-import { mkdtemp, rm, mkdir, writeFile, symlink } from "fs/promises";
-import { join } from "path";
-import { tmpdir } from "os";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { parseLockFile, resolveAgentBindings, scanInstalledSkills } from "../src/services/scanner";
 
 describe("scanner", () => {
   let tempDir: string;
@@ -24,7 +24,10 @@ describe("scanner", () => {
   it("discovers skills in canonical root with SKILL.md", async () => {
     const skillDir = join(canonicalRoot, "test-skill");
     await mkdir(skillDir);
-    await writeFile(join(skillDir, "SKILL.md"), "---\nname: test-skill\ndescription: A test\n---\nContent");
+    await writeFile(
+      join(skillDir, "SKILL.md"),
+      "---\nname: test-skill\ndescription: A test\n---\nContent",
+    );
     const skills = await scanInstalledSkills(canonicalRoot, {});
     expect(skills).toHaveLength(1);
     expect(skills[0].name).toBe("test-skill");
@@ -34,7 +37,10 @@ describe("scanner", () => {
   it("marks skill as managed when inside canonical root", async () => {
     const skillDir = join(canonicalRoot, "test-skill");
     await mkdir(skillDir);
-    await writeFile(join(skillDir, "SKILL.md"), "---\nname: test-skill\ndescription: A test\n---\n");
+    await writeFile(
+      join(skillDir, "SKILL.md"),
+      "---\nname: test-skill\ndescription: A test\n---\n",
+    );
     const skills = await scanInstalledSkills(canonicalRoot, {});
     expect(skills[0].managed).toBe(true);
   });
@@ -42,9 +48,18 @@ describe("scanner", () => {
   it("resolves agent bindings from symlinks", async () => {
     const skillDir = join(canonicalRoot, "test-skill");
     await mkdir(skillDir);
-    await writeFile(join(skillDir, "SKILL.md"), "---\nname: test-skill\ndescription: A test\n---\n");
+    await writeFile(
+      join(skillDir, "SKILL.md"),
+      "---\nname: test-skill\ndescription: A test\n---\n",
+    );
     await symlink(skillDir, join(claudeSkillsDir, "test-skill"));
-    const agents = [{ name: "claude-code" as const, displayName: "Claude Code", globalSkillsDir: claudeSkillsDir }];
+    const agents = [
+      {
+        name: "claude-code" as const,
+        displayName: "Claude Code",
+        globalSkillsDir: claudeSkillsDir,
+      },
+    ];
     const bindings = await resolveAgentBindings("test-skill", agents, canonicalRoot);
     expect(bindings).toHaveLength(1);
     expect(bindings[0].linked).toBe(true);
@@ -56,9 +71,33 @@ describe("parseLockFile", () => {
     const lockData = {
       version: 3,
       skills: {
-        "skill-a": { source: "owner/repo", pluginName: "repo", sourceType: "github", sourceUrl: "", skillFolderHash: "", installedAt: "", updatedAt: "" },
-        "skill-b": { source: "owner/repo", pluginName: "repo", sourceType: "github", sourceUrl: "", skillFolderHash: "", installedAt: "", updatedAt: "" },
-        "skill-c": { source: "other/repo", pluginName: "other-repo", sourceType: "github", sourceUrl: "", skillFolderHash: "", installedAt: "", updatedAt: "" },
+        "skill-a": {
+          source: "owner/repo",
+          pluginName: "repo",
+          sourceType: "github",
+          sourceUrl: "",
+          skillFolderHash: "",
+          installedAt: "",
+          updatedAt: "",
+        },
+        "skill-b": {
+          source: "owner/repo",
+          pluginName: "repo",
+          sourceType: "github",
+          sourceUrl: "",
+          skillFolderHash: "",
+          installedAt: "",
+          updatedAt: "",
+        },
+        "skill-c": {
+          source: "other/repo",
+          pluginName: "other-repo",
+          sourceType: "github",
+          sourceUrl: "",
+          skillFolderHash: "",
+          installedAt: "",
+          updatedAt: "",
+        },
       },
     };
     const groups = parseLockFile(lockData);

@@ -1,6 +1,6 @@
-import { readFile, writeFile, mkdir } from "fs/promises";
-import { dirname, join } from "path";
-import { homedir } from "os";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
 import type { Config } from "../types.js";
 import { DEFAULT_CONFIG } from "../types.js";
 

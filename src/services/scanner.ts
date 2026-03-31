@@ -1,7 +1,7 @@
-import { readdir, readFile, lstat, realpath, readlink } from "fs/promises";
-import { join, resolve } from "path";
+import { lstat, readdir, readFile, realpath } from "node:fs/promises";
+import { join } from "node:path";
 import matter from "gray-matter";
-import type { LocalSkill, AgentBinding, AgentInfo } from "../types.js";
+import type { AgentBinding, AgentInfo, LocalSkill } from "../types.js";
 
 export interface LockFileData {
   version: number;
@@ -33,7 +33,9 @@ export async function readLockFile(lockPath: string): Promise<LockFileData | nul
 }
 
 export async function resolveAgentBindings(
-  skillName: string, agents: AgentInfo[], canonicalRoot: string
+  skillName: string,
+  agents: AgentInfo[],
+  canonicalRoot: string,
 ): Promise<AgentBinding[]> {
   const bindings: AgentBinding[] = [];
   for (const agent of agents) {
@@ -42,18 +44,23 @@ export async function resolveAgentBindings(
     let linked = false;
     try {
       const stat = await lstat(linkPath);
-      if (stat.isSymbolicLink()) { linked = true; }
-      else if (stat.isDirectory()) {
+      if (stat.isSymbolicLink()) {
+        linked = true;
+      } else if (stat.isDirectory()) {
         const resolved = await realpath(linkPath);
         linked = resolved.startsWith(canonicalRoot);
       }
-    } catch { /* not linked */ }
+    } catch {
+      /* not linked */
+    }
     bindings.push({ agent: agent.name, linked, linkPath });
   }
   return bindings;
 }
 
-async function parseSkillDir(dirPath: string): Promise<{ name: string; description: string } | null> {
+async function parseSkillDir(
+  dirPath: string,
+): Promise<{ name: string; description: string } | null> {
   try {
     const skillMdPath = join(dirPath, "SKILL.md");
     const content = await readFile(skillMdPath, "utf-8");
@@ -62,11 +69,14 @@ async function parseSkillDir(dirPath: string): Promise<{ name: string; descripti
       return { name: data.name, description: data.description };
     }
     return null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export async function scanInstalledSkills(
-  canonicalRoot: string, lockGroups: Record<string, string>
+  canonicalRoot: string,
+  lockGroups: Record<string, string>,
 ): Promise<Omit<LocalSkill, "agents">[]> {
   const skills: Omit<LocalSkill, "agents">[] = [];
   try {
@@ -84,13 +94,19 @@ export async function scanInstalledSkills(
           realpath(canonicalRoot),
         ]);
         managed = resolved.startsWith(canonicalReal);
-      } catch { managed = false; }
+      } catch {
+        managed = false;
+      }
       skills.push({
-        name: parsed.name, description: parsed.description,
+        name: parsed.name,
+        description: parsed.description,
         repo: lockGroups[parsed.name] ?? "unknown",
-        canonicalPath: dirPath, managed,
+        canonicalPath: dirPath,
+        managed,
       });
     }
-  } catch { /* canonicalRoot doesn't exist */ }
+  } catch {
+    /* canonicalRoot doesn't exist */
+  }
   return skills;
 }

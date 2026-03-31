@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { enableSkill, disableSkill, removeSkill, isManaged } from "../src/services/linker";
-import { mkdtemp, rm, mkdir, writeFile, symlink, lstat, readlink } from "fs/promises";
-import { join } from "path";
-import { tmpdir } from "os";
+import { lstat, mkdir, mkdtemp, readlink, rm, symlink, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { disableSkill, enableSkill, isManaged, removeSkill } from "../src/services/linker";
 
 describe("linker", () => {
   let tempDir: string;

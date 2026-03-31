@@ -1,5 +1,5 @@
-import { symlink, rm, lstat, realpath, mkdir, readlink } from "fs/promises";
-import { dirname, resolve } from "path";
+import { lstat, mkdir, readlink, realpath, rm, symlink } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 
 export async function isManaged(linkPath: string, canonicalRoot: string): Promise<boolean> {
   try {
@@ -18,7 +18,9 @@ export async function enableSkill(canonicalPath: string, linkPath: string): Prom
       const target = await readlink(linkPath);
       const resolved = resolve(dirname(linkPath), target);
       if (resolved === resolve(canonicalPath)) return;
-      throw new Error(`${linkPath} already exists but points to ${resolved}, expected ${canonicalPath}`);
+      throw new Error(
+        `${linkPath} already exists but points to ${resolved}, expected ${canonicalPath}`,
+      );
     }
     throw new Error(`${linkPath} exists and is not a symlink`);
   } catch (err: unknown) {
@@ -39,13 +41,17 @@ export async function disableSkill(linkPath: string, canonicalRoot: string): Pro
   const resolved = resolve(dirname(linkPath), target);
   const root = resolve(canonicalRoot);
   if (!resolved.startsWith(root)) {
-    throw new Error(`Symlink at ${linkPath} is not managed (target ${resolved} outside canonical root)`);
+    throw new Error(
+      `Symlink at ${linkPath} is not managed (target ${resolved} outside canonical root)`,
+    );
   }
   await rm(linkPath);
 }
 
 export async function removeSkill(
-  canonicalPath: string, agentLinkPaths: string[], canonicalRoot: string
+  canonicalPath: string,
+  agentLinkPaths: string[],
+  canonicalRoot: string,
 ): Promise<void> {
   const root = await realpath(canonicalRoot);
   for (const linkPath of agentLinkPaths) {
@@ -64,7 +70,9 @@ export async function removeSkill(
           await rm(linkPath);
         }
       }
-    } catch { /* already gone */ }
+    } catch {
+      /* already gone */
+    }
   }
   const resolved = await realpath(canonicalPath);
   if (resolved.startsWith(root)) {

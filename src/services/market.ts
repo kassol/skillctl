@@ -10,12 +10,24 @@ export async function searchMarket(query: string, limit = 20): Promise<MarketSea
     const res = await fetch(url);
     if (!res.ok) return [];
     const data = (await res.json()) as {
-      skills: Array<{ id: string; skillId: string; name: string; source: string; installs: number }>;
+      skills: Array<{
+        id: string;
+        skillId: string;
+        name: string;
+        source: string;
+        installs: number;
+      }>;
     };
     return data.skills.map((s) => ({
-      id: s.id, skillId: s.skillId, name: s.name, source: s.source, installs: s.installs,
+      id: s.id,
+      skillId: s.skillId,
+      name: s.name,
+      source: s.source,
+      installs: s.installs,
     }));
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
 export function formatInstalls(count: number): string {
@@ -28,5 +40,7 @@ export async function checkMarketOnline(): Promise<boolean> {
   try {
     const res = await fetch("https://skills.sh/api/search?q=test&limit=1");
     return res.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }

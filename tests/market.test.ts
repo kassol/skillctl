@@ -1,16 +1,24 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { searchMarket, formatInstalls } from "../src/services/market";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { formatInstalls, searchMarket } from "../src/services/market";
 
 describe("market", () => {
   const originalFetch = globalThis.fetch;
-  afterEach(() => { globalThis.fetch = originalFetch; });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
 
   it("returns parsed skills from API response", async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         skills: [
-          { id: "owner/repo/skill-a", skillId: "skill-a", name: "Skill A", source: "owner/repo", installs: 1000 },
+          {
+            id: "owner/repo/skill-a",
+            skillId: "skill-a",
+            name: "Skill A",
+            source: "owner/repo",
+            installs: 1000,
+          },
         ],
         count: 1,
       }),
@@ -35,7 +43,13 @@ describe("market", () => {
 });
 
 describe("formatInstalls", () => {
-  it("formats millions", () => { expect(formatInstalls(1_500_000)).toBe("1.5M"); });
-  it("formats thousands", () => { expect(formatInstalls(2_300)).toBe("2.3K"); });
-  it("formats small numbers", () => { expect(formatInstalls(42)).toBe("42"); });
+  it("formats millions", () => {
+    expect(formatInstalls(1_500_000)).toBe("1.5M");
+  });
+  it("formats thousands", () => {
+    expect(formatInstalls(2_300)).toBe("2.3K");
+  });
+  it("formats small numbers", () => {
+    expect(formatInstalls(42)).toBe("42");
+  });
 });

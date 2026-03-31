@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { isEnabled } from "../src/types";
+import { describe, expect, it } from "vitest";
 import type { LocalSkill } from "../src/types";
+import { isEnabled } from "../src/types";
 
 describe("isEnabled", () => {
   it("returns true when any agent is linked", () => {
