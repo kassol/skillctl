@@ -73,23 +73,25 @@ skills-tui (single binary)
 
 ### Integration with vercel-labs/skills
 
-Referenced as a dependency (`"skills": "^1.4.6"`), not forked.
+**ADR: The `skills` npm package is a pure CLI (`"bin": {"skills": ...}`) with no library exports.** Functions like `searchSkillsAPI()`, `runAdd()`, `getAllLockedSkills()` are internal and cannot be imported.
 
-**Reused from skills package:**
-- `searchSkillsAPI()` — marketplace search
-- `agents` config — agent name/path mappings (including `globalSkillsDir` for each agent)
-- `parseSkillMd()` — SKILL.md parsing
-- `matter()` (gray-matter) — frontmatter extraction
-- `runAdd()` — install skills from a repo source
-- `runSync()` — update installed skills to latest
-- `getAllLockedSkills()` — read lock file for repo grouping (see below)
+**Strategy adopted:**
+- **Lightweight ops** (scan, symlink, lock file parse, SKILL.md parse, API search) — self-implemented; the logic is straightforward filesystem + HTTP
+- **Heavy ops** (add repo, sync/update, remove) — subprocess call to `npx skills add/sync/remove`
+- **Agent config** — hardcoded registry of known agents with their skill directory paths, derived from the skills package source
 
-**Implemented directly:**
-- Symlink scanning/creation/deletion — simpler than going through skills' install pipeline
+**Self-implemented:**
+- Lock file reader (`~/.agents/.skill-lock.json`) for repo grouping
+- SKILL.md frontmatter parsing via `gray-matter`
+- `skills.sh/api/search` HTTP client
+- Symlink scanning/creation/deletion with ownership verification
 - Three-column UI — entirely custom
 - Config file management
 
-If needed functions are not exported, preference is to upstream a PR. Fallback is direct filesystem implementation (scanning symlinks and parsing SKILL.md are straightforward).
+**Via subprocess (`npx skills`):**
+- `npx skills add <source> -g -a <agent> -y` — install skills from repo
+- `npx skills update` — sync installed skills to latest
+- `npx skills remove <skill> -g -a <agent> -y` — remove skills
 
 ### Repo Grouping via Lock File
 
