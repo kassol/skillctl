@@ -1,6 +1,6 @@
 import { useInput } from "ink";
 import { disableSkill, enableSkill, removeSkill } from "../services/linker.js";
-import type { LocalSkill } from "../types.js";
+import type { AgentType, LocalSkill } from "../types.js";
 import { CANONICAL_ROOT } from "../types.js";
 import type { SkillsState } from "./useSkills.js";
 
@@ -11,6 +11,7 @@ interface UseFocusOptions {
   marketResultCount: number;
   onReload: () => Promise<void>;
   disabled?: boolean;
+  defaultAgents?: AgentType[];
 }
 
 export function useFocus({
@@ -20,6 +21,7 @@ export function useFocus({
   marketResultCount,
   onReload,
   disabled,
+  defaultAgents = ["claude-code"],
 }: UseFocusOptions) {
   useInput(
     (input, key) => {
@@ -53,12 +55,13 @@ export function useFocus({
 
       // Enter: context-dependent
       if (key.return) {
-        handleEnter(state, repoCount);
+        handleEnter(state, repoCount, defaultAgents, onReload);
         return;
       }
 
-      // Add repo
-      if (input === "a" && state.focusedColumn === 0) {
+      // Add repo — opens search overlay, App handles the actual install on submit
+      if (input === "a" && state.focusedColumn === 0 && !state.isMarketMode) {
+        state.setStatusMessage("Enter owner/repo to add");
         state.setSearchActive(true);
         return;
       }
@@ -73,9 +76,9 @@ export function useFocus({
         return;
       }
 
-      // Enable/disable all agents
+      // Enable/disable all agents (E uses defaultAgents only)
       if (input === "E") {
-        handleAllToggle(state, currentSkills, true, onReload);
+        handleAllToggle(state, currentSkills, true, onReload, defaultAgents);
         return;
       }
       if (input === "D") {
@@ -149,16 +152,44 @@ function navigateDown(
   }
 }
 
-function handleEnter(state: SkillsState, _repoCount: number) {
-  const { focusedColumn } = state;
+async function handleEnter(
+  state: SkillsState,
+  _repoCount: number,
+  defaultAgents: AgentType[],
+  onReload: () => Promise<void>,
+) {
+  const { focusedColumn, isMarketMode } = state;
   if (focusedColumn === 0) {
-    // Enter on repo → focus skill list
     state.focusNext();
   } else if (focusedColumn === 1) {
-    // Enter on skill → focus detail panel
-    state.focusNext();
+    if (isMarketMode) {
+      // Install from market
+      const marketSkill = state.marketResults[state.selectedSkill];
+      if (!marketSkill) return;
+      state.setConfirmAction({
+        type: "market-install",
+        message: `Install ${marketSkill.name} from ${marketSkill.source}?`,
+        onConfirm: async () => {
+          state.setConfirmAction(null);
+          state.setStatusMessage(`Installing ${marketSkill.name}...`);
+          try {
+            const { addRepo } = await import("../services/repo.js");
+            await addRepo(marketSkill.source, defaultAgents, marketSkill.name);
+            const { addRepo: addRepoConfig } = await import("../services/config.js");
+            await addRepoConfig(marketSkill.source);
+            state.setStatusMessage(`Installed ${marketSkill.name}`);
+            await onReload();
+          } catch (err) {
+            state.setStatusMessage(
+              `Install failed: ${err instanceof Error ? err.message : String(err)}`,
+            );
+          }
+        },
+      });
+    } else {
+      state.focusNext();
+    }
   }
-  // Detail panel enter: no-op for now
 }
 
 function getSelectedSkill(state: SkillsState, currentSkills: LocalSkill[]): LocalSkill | null {
@@ -207,17 +238,22 @@ async function handleAllToggle(
   currentSkills: LocalSkill[],
   enable: boolean,
   onReload: () => Promise<void>,
+  defaultAgents?: AgentType[],
 ) {
   const skill = getSelectedSkill(state, currentSkills);
   if (!guardManaged(state, skill)) return;
   const action = enable ? "enable" : "disable";
+  const scope = enable && defaultAgents ? "default agents" : "ALL agents";
   state.setConfirmAction({
     type: `${action}-all`,
-    message: `${enable ? "Enable" : "Disable"} ${skill.name} for ALL agents?`,
+    message: `${enable ? "Enable" : "Disable"} ${skill.name} for ${scope}?`,
     onConfirm: async () => {
       state.setConfirmAction(null);
       try {
-        for (const binding of skill.agents) {
+        const bindings = enable && defaultAgents
+          ? skill.agents.filter((b) => (defaultAgents as string[]).includes(b.agent))
+          : skill.agents;
+        for (const binding of bindings) {
           if (enable) {
             await enableSkill(skill.canonicalPath, binding.linkPath);
           } else {
@@ -226,7 +262,7 @@ async function handleAllToggle(
             }
           }
         }
-        state.setStatusMessage(`${enable ? "Enabled" : "Disabled"} ${skill.name} for all agents`);
+        state.setStatusMessage(`${enable ? "Enabled" : "Disabled"} ${skill.name} for ${scope}`);
         await onReload();
       } catch (err) {
         state.setStatusMessage(`Error: ${err instanceof Error ? err.message : String(err)}`);

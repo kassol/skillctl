@@ -1,10 +1,21 @@
 import { lstat, mkdir, readlink, realpath, rm, symlink } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { dirname, resolve, sep } from "node:path";
+
+/**
+ * Check if `child` is a sub-path of `parent`.
+ * Uses sep-terminated comparison to avoid prefix collisions
+ * (e.g., /a/skills vs /a/skills-backup).
+ */
+export function isSubPath(parent: string, child: string): boolean {
+  const p = resolve(parent);
+  const c = resolve(child);
+  return c === p || c.startsWith(p + sep);
+}
 
 export async function isManaged(linkPath: string, canonicalRoot: string): Promise<boolean> {
   try {
     const [resolved, root] = await Promise.all([realpath(linkPath), realpath(canonicalRoot)]);
-    return resolved.startsWith(root);
+    return isSubPath(root, resolved);
   } catch {
     return false;
   }
@@ -40,7 +51,7 @@ export async function disableSkill(linkPath: string, canonicalRoot: string): Pro
   const target = await readlink(linkPath);
   const resolved = resolve(dirname(linkPath), target);
   const root = resolve(canonicalRoot);
-  if (!resolved.startsWith(root)) {
+  if (!isSubPath(root, resolved)) {
     throw new Error(
       `Symlink at ${linkPath} is not managed (target ${resolved} outside canonical root)`,
     );

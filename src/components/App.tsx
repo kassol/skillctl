@@ -89,13 +89,21 @@ export function App() {
     checkMarketOnline().then(setMarketOnline);
   }, [loadData]);
 
-  // Derive current skills from selected repo
+  // Filtered repos for display — must be computed before currentSkills
+  const filteredRepos = useMemo(() => {
+    return filterLocal(
+      state.repos.map((r) => ({ ...r, name: r.source })),
+      state.isMarketMode ? "" : state.searchQuery,
+    ).map(({ name: _, ...r }) => r) as Repo[];
+  }, [state.repos, state.searchQuery, state.isMarketMode]);
+
+  // Derive current skills from selected repo in FILTERED list
   const currentSkills = useMemo(() => {
     if (state.isMarketMode) return [];
-    const repo = state.repos[state.selectedRepo];
+    const repo = filteredRepos[state.selectedRepo];
     if (!repo) return [];
-    return filterLocal(repo.skills, state.isMarketMode ? "" : state.searchQuery);
-  }, [state.repos, state.selectedRepo, state.isMarketMode, state.searchQuery]);
+    return repo.skills;
+  }, [filteredRepos, state.selectedRepo, state.isMarketMode]);
 
   // Market search
   const { results: marketResults } = useMarketSearch(state.searchQuery, state.isMarketMode);
@@ -106,14 +114,6 @@ export function App() {
     }
   }, [marketResults, state.isMarketMode]);
 
-  // Filtered repos for display
-  const filteredRepos = useMemo(() => {
-    return filterLocal(
-      state.repos.map((r) => ({ ...r, name: r.source })),
-      state.isMarketMode ? "" : state.searchQuery,
-    ).map(({ name: _, ...r }) => r) as Repo[];
-  }, [state.repos, state.searchQuery, state.isMarketMode]);
-
   // Keyboard handler — disabled when search overlay or confirm dialog is active
   useFocus({
     state,
@@ -122,14 +122,37 @@ export function App() {
     marketResultCount: state.marketResults.length,
     onReload: loadData,
     disabled: state.searchActive || state.confirmAction !== null,
+    defaultAgents: state.config?.defaultAgents ?? ["claude-code"],
   });
 
   // Search overlay handlers
-  const handleSearchSubmit = useCallback((value: string) => {
-    storeRef.current.getState().setSearchQuery(value);
-    storeRef.current.getState().setSearchActive(false);
-    setSearchInput("");
-  }, []);
+  const handleSearchSubmit = useCallback(
+    async (value: string) => {
+      const s = storeRef.current.getState();
+      // If in repo add mode (focusedColumn === 0 and not market), treat as add repo
+      if (s.focusedColumn === 0 && !s.isMarketMode && /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(value)) {
+        s.setSearchActive(false);
+        setSearchInput("");
+        s.setStatusMessage(`Adding ${value}...`);
+        try {
+          const { addRepo: addRepoCmd } = await import("../services/repo.js");
+          const { addRepo: addRepoConfig } = await import("../services/config.js");
+          await addRepoCmd(value, s.config?.defaultAgents ?? ["claude-code"]);
+          await addRepoConfig(value);
+          s.setStatusMessage(`Added ${value}`);
+          await loadData();
+        } catch (err) {
+          s.setStatusMessage(`Add failed: ${err instanceof Error ? err.message : String(err)}`);
+        }
+        return;
+      }
+      // Normal search
+      s.setSearchQuery(value);
+      s.setSearchActive(false);
+      setSearchInput("");
+    },
+    [loadData],
+  );
 
   const handleSearchCancel = useCallback(() => {
     storeRef.current.getState().setSearchActive(false);
