@@ -126,6 +126,41 @@ jobs:
           mkdir -p tap-repo/Formula
           cp skills-tui.rb tap-repo/Formula/skills-tui.rb
 
+      - name: Regenerate tap README
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd tap-repo
+          echo "# kassol/homebrew-tap" > README.md
+          echo "" >> README.md
+          echo "Homebrew tap for kassol CLI tools." >> README.md
+          echo "" >> README.md
+          echo "## Available Formulae" >> README.md
+          echo "" >> README.md
+          for f in Formula/*.rb; do
+            name=$(basename "$f" .rb)
+            desc=$(grep 'desc ' "$f" | head -1 | sed 's/.*desc "\(.*\)"/\1/')
+            echo "- \`${name}\` - ${desc}" >> README.md
+          done
+          echo "" >> README.md
+          echo "## Usage" >> README.md
+          echo "" >> README.md
+          echo '```bash' >> README.md
+          echo "brew tap kassol/tap" >> README.md
+          for f in Formula/*.rb; do
+            name=$(basename "$f" .rb)
+            echo "brew install ${name}" >> README.md
+          done
+          echo '```' >> README.md
+          echo "" >> README.md
+          echo "## Source Repositories" >> README.md
+          echo "" >> README.md
+          for f in Formula/*.rb; do
+            name=$(basename "$f" .rb)
+            homepage=$(grep 'homepage ' "$f" | head -1 | sed 's/.*homepage "\(.*\)"/\1/')
+            echo "- \`${name}\`: ${homepage}" >> README.md
+          done
+
       - name: Commit and push tap update
         env:
           VERSION: ${{ github.event.inputs.tag || github.ref_name }}
@@ -139,6 +174,6 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Formula/skills-tui.rb
+          git add Formula/skills-tui.rb README.md
           git commit -m "Update skills-tui to ${VERSION#v}"
           git push origin HEAD:main
