@@ -36,7 +36,7 @@ export function useFocus({
       if (key.tab) {
         const cols = maxColumn + 1;
         if (key.shift) {
-          state.setFocusedColumn(((state.focusedColumn - 1) + cols) % cols);
+          state.setFocusedColumn((state.focusedColumn - 1 + cols) % cols);
         } else {
           state.setFocusedColumn((state.focusedColumn + 1) % cols);
         }
@@ -101,7 +101,11 @@ export function useFocus({
       }
 
       // Delete — only from skill or detail column
-      if (input === "x" && (state.focusedColumn === 1 || state.focusedColumn === 2) && !state.isMarketMode) {
+      if (
+        input === "x" &&
+        (state.focusedColumn === 1 || state.focusedColumn === 2) &&
+        !state.isMarketMode
+      ) {
         handleDelete(state, currentSkills, onReload);
         return;
       }
@@ -258,9 +262,10 @@ async function handleAllToggle(
     onConfirm: async () => {
       state.setConfirmAction(null);
       try {
-        const bindings = enable && defaultAgents
-          ? skill.agents.filter((b) => (defaultAgents as string[]).includes(b.agent))
-          : skill.agents;
+        const bindings =
+          enable && defaultAgents
+            ? skill.agents.filter((b) => (defaultAgents as string[]).includes(b.agent))
+            : skill.agents;
         for (const binding of bindings) {
           if (enable) {
             await enableSkill(skill.canonicalPath, binding.linkPath);

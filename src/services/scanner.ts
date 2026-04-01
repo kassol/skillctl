@@ -1,8 +1,8 @@
 import { lstat, readdir, readFile, readlink, realpath } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
-import { isSubPath } from "./linker.js";
 import matter from "gray-matter";
 import type { AgentBinding, AgentInfo, LocalSkill } from "../types.js";
+import { isSubPath } from "./linker.js";
 
 export interface LockFileData {
   version: number;
