@@ -154,13 +154,21 @@ export function App() {
       s.setSearchQuery(value);
       s.setSearchActive(false);
       setSearchInput("");
+      // Clamp selection to filtered results
+      s.selectRepo(0);
     },
     [loadData],
   );
 
   const handleSearchCancel = useCallback(() => {
-    storeRef.current.getState().setSearchActive(false);
+    const s = storeRef.current.getState();
+    s.setSearchActive(false);
+    s.setSearchQuery(""); // restore unfiltered view
     setSearchInput("");
+    // Clamp selectedRepo to valid range after filter reset
+    if (s.selectedRepo >= s.repos.length) {
+      s.selectRepo(Math.max(0, s.repos.length - 1));
+    }
   }, []);
 
   if (state.loading) {

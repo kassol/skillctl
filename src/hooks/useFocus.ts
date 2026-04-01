@@ -68,28 +68,28 @@ export function useFocus({
         return;
       }
 
-      // Enable/disable single agent
-      if (input === "e") {
+      // Enable/disable single agent — Detail column only
+      if (input === "e" && state.focusedColumn === 2) {
         handleSingleToggle(state, currentSkills, true, onReload);
         return;
       }
-      if (input === "d") {
+      if (input === "d" && state.focusedColumn === 2) {
         handleSingleToggle(state, currentSkills, false, onReload);
         return;
       }
 
-      // Enable/disable all agents (E uses defaultAgents only)
-      if (input === "E") {
+      // Enable/disable all agents — Detail column only
+      if (input === "E" && state.focusedColumn === 2) {
         handleAllToggle(state, currentSkills, true, onReload, defaultAgents);
         return;
       }
-      if (input === "D") {
+      if (input === "D" && state.focusedColumn === 2) {
         handleAllToggle(state, currentSkills, false, onReload);
         return;
       }
 
-      // Space: toggle current agent
-      if (input === " ") {
+      // Space: toggle current agent — Detail column only
+      if (input === " " && state.focusedColumn === 2) {
         handleSpaceToggle(state, currentSkills, onReload);
         return;
       }
