@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { Box, Text } from "ink";
+import { Box, Text, useStdout } from "ink";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getAgentInfos } from "../agents.js";
 import { useFocus } from "../hooks/useFocus.js";
@@ -35,6 +35,10 @@ export function App() {
   const storeRef = useRef(createSkillsStore());
   const state = useStore(storeRef.current);
   const [marketOnline, setMarketOnline] = useState(true);
+  const { stdout } = useStdout();
+  const termCols = stdout?.columns ?? 80;
+  // maxColumn: 2 for full (>=100), 1 for no-detail (<100), 0 for single (<50)
+  const maxColumn = termCols >= 100 ? 2 : termCols >= 50 ? 1 : 0;
   const [searchInput, setSearchInput] = useState("");
 
   const loadData = useCallback(async () => {
@@ -123,6 +127,7 @@ export function App() {
     onReload: loadData,
     disabled: state.searchActive || state.confirmAction !== null,
     defaultAgents: state.config?.defaultAgents ?? ["claude-code"],
+    maxColumn,
   });
 
   // Search overlay handlers

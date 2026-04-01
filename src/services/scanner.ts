@@ -1,5 +1,5 @@
-import { lstat, readdir, readFile, realpath } from "node:fs/promises";
-import { join } from "node:path";
+import { lstat, readdir, readFile, readlink, realpath } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
 import { isSubPath } from "./linker.js";
 import matter from "gray-matter";
 import type { AgentBinding, AgentInfo, LocalSkill } from "../types.js";
@@ -38,6 +38,12 @@ export async function resolveAgentBindings(
   agents: AgentInfo[],
   canonicalRoot: string,
 ): Promise<AgentBinding[]> {
+  let resolvedRoot: string;
+  try {
+    resolvedRoot = await realpath(canonicalRoot);
+  } catch {
+    resolvedRoot = resolve(canonicalRoot);
+  }
   const bindings: AgentBinding[] = [];
   for (const agent of agents) {
     if (!agent.globalSkillsDir) continue;
@@ -46,7 +52,16 @@ export async function resolveAgentBindings(
     try {
       const stat = await lstat(linkPath);
       if (stat.isSymbolicLink()) {
-        linked = true;
+        // Only mark as linked if symlink target is inside canonical root
+        try {
+          const resolved = await realpath(linkPath);
+          linked = isSubPath(resolvedRoot, resolved);
+        } catch {
+          // Dangling symlink — check raw target path
+          const target = await readlink(linkPath);
+          const rawResolved = resolve(dirname(linkPath), target);
+          linked = isSubPath(resolvedRoot, rawResolved);
+        }
       } else if (stat.isDirectory()) {
         const resolved = await realpath(linkPath);
         linked = isSubPath(canonicalRoot, resolved);

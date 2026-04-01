@@ -25,6 +25,7 @@ export interface SkillsState {
   selectAgent: (index: number) => void;
   focusNext: () => void;
   focusPrev: () => void;
+  setFocusedColumn: (col: number) => void;
   setMarketMode: (on: boolean) => void;
   setLoading: (loading: boolean) => void;
   setSearchQuery: (query: string) => void;
@@ -59,6 +60,7 @@ export function createSkillsStore() {
     selectAgent: (index) => set({ selectedAgent: index }),
     focusNext: () => set((s) => ({ focusedColumn: (s.focusedColumn + 1) % 3 })),
     focusPrev: () => set((s) => ({ focusedColumn: (s.focusedColumn + 2) % 3 })),
+    setFocusedColumn: (focusedColumn) => set({ focusedColumn }),
     setMarketMode: (isMarketMode) => set({ isMarketMode, selectedSkill: 0 }),
     setLoading: (loading) => set({ loading }),
     setSearchQuery: (searchQuery) => set({ searchQuery }),

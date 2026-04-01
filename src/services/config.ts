@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import type { Config } from "../types.js";
@@ -20,14 +20,21 @@ export async function readConfig(path?: string): Promise<Config> {
       defaultAgents: parsed.defaultAgents ?? DEFAULT_CONFIG.defaultAgents,
       repos: parsed.repos ?? DEFAULT_CONFIG.repos,
     };
-  } catch {
-    return { ...DEFAULT_CONFIG };
+  } catch (err: unknown) {
+    // Only return defaults for missing file; rethrow parse/IO errors
+    if (err instanceof Error && "code" in err && (err as NodeJS.ErrnoException).code === "ENOENT") {
+      return { ...DEFAULT_CONFIG };
+    }
+    throw err;
   }
 }
 
 export async function writeConfig(path: string, config: Config): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
-  await writeFile(path, JSON.stringify(config, null, 2), "utf-8");
+  // Atomic write: write to temp file, then rename
+  const tmpPath = `${path}.tmp`;
+  await writeFile(tmpPath, JSON.stringify(config, null, 2), "utf-8");
+  await rename(tmpPath, path);
 }
 
 export async function addRepo(source: string, path?: string): Promise<void> {

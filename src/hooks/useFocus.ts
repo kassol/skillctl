@@ -12,6 +12,7 @@ interface UseFocusOptions {
   onReload: () => Promise<void>;
   disabled?: boolean;
   defaultAgents?: AgentType[];
+  maxColumn?: number; // max focusable column (0-indexed), based on terminal width
 }
 
 export function useFocus({
@@ -22,6 +23,7 @@ export function useFocus({
   onReload,
   disabled,
   defaultAgents = ["claude-code"],
+  maxColumn = 2,
 }: UseFocusOptions) {
   useInput(
     (input, key) => {
@@ -30,10 +32,14 @@ export function useFocus({
         process.exit(0);
       }
 
-      // Tab / Shift+Tab: cycle columns
+      // Tab / Shift+Tab: cycle visible columns only
       if (key.tab) {
-        if (key.shift) state.focusPrev();
-        else state.focusNext();
+        const cols = maxColumn + 1;
+        if (key.shift) {
+          state.setFocusedColumn(((state.focusedColumn - 1) + cols) % cols);
+        } else {
+          state.setFocusedColumn((state.focusedColumn + 1) % cols);
+        }
         return;
       }
 
