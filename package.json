@@ -1,6 +1,9 @@
 {
   "name": "skills-tui",
-  "module": "index.ts",
+  "module": "src/app.tsx",
+  "bin": {
+    "skills-tui": "src/app.tsx"
+  },
   "type": "module",
   "private": true,
   "scripts": {
