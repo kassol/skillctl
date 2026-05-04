@@ -1,5 +1,6 @@
+.DS_Store
 node_modules/
 dist/
-skills-tui
-skills-tui-*
+/skillctl
+/skillctl-*
 *.tsbuildinfo

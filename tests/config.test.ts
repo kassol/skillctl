@@ -2,49 +2,87 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { readConfig, writeConfig } from "../src/services/config";
+import {
+  getConfigValue,
+  parseConfigValue,
+  readConfig,
+  setConfigValue,
+  sourceDefaults,
+  unsetConfigValue,
+  writeConfig,
+} from "../src/services/config";
 import type { Config } from "../src/types";
 
 describe("config", () => {
   let tempDir: string;
 
   beforeEach(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), "skills-tui-test-"));
+    tempDir = await mkdtemp(join(tmpdir(), "skillctl-config-test-"));
   });
 
   afterEach(async () => {
     await rm(tempDir, { recursive: true, force: true });
   });
 
-  it("returns default config when file does not exist", async () => {
-    const config = await readConfig(join(tempDir, "config.json"));
-    expect(config.defaultAgents).toEqual(["claude-code"]);
-    expect(config.repos).toEqual([]);
+  it("returns a user-level default config when file does not exist", async () => {
+    const config = await readConfig(join(tempDir, "missing.json"));
+    expect(config.version).toBe(1);
+    expect(config.runtime.globalStore).toContain(".agents/skills");
+    expect(config.runtime.lockFile).toContain(".agents/.skill-lock.json");
+    expect(config.runtime.npx).toBe("npx --yes skills");
+    expect(config.sources).toEqual({});
   });
 
-  it("reads existing config", async () => {
+  it("normalizes source defaults when reading existing config", async () => {
     const configPath = join(tempDir, "config.json");
-    const data: Config = {
-      defaultAgents: ["claude-code", "codex"],
-      repos: [{ source: "owner/repo", addedAt: "2026-04-01" }],
-    };
-    await writeFile(configPath, JSON.stringify(data), "utf-8");
+    await writeFile(
+      configPath,
+      JSON.stringify({
+        version: 1,
+        runtime: { globalStore: "~/.agents/skills" },
+        sources: {
+          mine: { path: "~/Workspace/my-skills", installRef: "kassol/my-skills" },
+        },
+      }),
+      "utf-8",
+    );
 
     const config = await readConfig(configPath);
-    expect(config.defaultAgents).toEqual(["claude-code", "codex"]);
-    expect(config.repos).toHaveLength(1);
+    expect(config.sources.mine.defaultAgents).toEqual(["*"]);
+    expect(config.sources.mine.publishBranch).toBe("main");
+    expect(config.sources.mine.path).toContain("Workspace/my-skills");
   });
 
-  it("writes config and creates parent dirs", async () => {
-    const configPath = join(tempDir, "nested", "dir", "config.json");
-    const data: Config = {
-      defaultAgents: ["claude-code"],
-      repos: [{ source: "owner/repo", addedAt: "2026-04-01" }],
+  it("writes config atomically and creates parent dirs", async () => {
+    const configPath = join(tempDir, "nested", "config.json");
+    const config: Config = {
+      version: 1,
+      runtime: { globalStore: "/tmp/global", lockFile: "/tmp/lock.json", npx: "npx --yes skills" },
+      sources: {
+        mine: sourceDefaults({ path: "/tmp/source", installRef: "owner/repo" }),
+      },
     };
-    await writeConfig(configPath, data);
+    await writeConfig(configPath, config);
+    const parsed = JSON.parse(await readFile(configPath, "utf-8"));
+    expect(parsed.sources.mine.installRef).toBe("owner/repo");
+  });
 
-    const raw = await readFile(configPath, "utf-8");
-    const parsed = JSON.parse(raw);
-    expect(parsed.repos).toHaveLength(1);
+  it("supports dotpath get/set/unset", () => {
+    const config: Config = {
+      version: 1,
+      runtime: { globalStore: "/tmp/global", lockFile: "/tmp/lock.json", npx: "npx --yes skills" },
+      sources: { mine: sourceDefaults({ path: "/tmp/source", installRef: "owner/repo" }) },
+    };
+    const withPath = setConfigValue(config, "sources.mine.path", "/tmp/source-2");
+    expect(getConfigValue(withPath, "sources.mine.path")).toBe("/tmp/source-2");
+    const removed = unsetConfigValue(withPath, "sources.mine.remote");
+    expect(getConfigValue(removed, "sources.mine.path")).toBe("/tmp/source-2");
+  });
+
+  it("parses JSON-ish config values", () => {
+    expect(parseConfigValue("true")).toBe(true);
+    expect(parseConfigValue("42")).toBe(42);
+    expect(parseConfigValue('["*"]')).toEqual(["*"]);
+    expect(parseConfigValue("plain string")).toBe("plain string");
   });
 });

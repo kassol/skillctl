@@ -6,9 +6,9 @@ import argparse
 from pathlib import Path
 
 
-TEMPLATE = """class SkillsTui < Formula
-  desc "TUI for managing global AI agent skills"
-  homepage "https://github.com/kassol/skills-tui"
+TEMPLATE = """class Skillctl < Formula
+  desc "Control plane for user-level global AI agent skills"
+  homepage "https://github.com/kassol/skillctl"
   version "{version}"
   license "MIT"
   depends_on "node"
@@ -22,19 +22,19 @@ TEMPLATE = """class SkillsTui < Formula
   end
 
   def install
-    bin.install "skills-tui"
+    bin.install "skillctl"
   end
 
   test do
-    output = shell_output("#{{bin}}/skills-tui --version")
-    assert_match "skills-tui", output
+    output = shell_output("#{{bin}}/skillctl --version")
+    assert_match "skillctl", output
   end
 end
 """
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Render Homebrew formula for skills-tui")
+    parser = argparse.ArgumentParser(description="Render Homebrew formula for skillctl")
     parser.add_argument("--version", required=True)
     parser.add_argument("--arm-url", required=True)
     parser.add_argument("--arm-sha", required=True)

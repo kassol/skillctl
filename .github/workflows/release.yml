@@ -42,15 +42,15 @@ jobs:
         run: bun install
 
       - name: Build binary
-        run: bun build --compile --target=bun src/app.tsx --outfile skills-tui
+        run: bun build --compile --target=bun src/app.ts --outfile skillctl
 
       - name: Package release asset
         shell: bash
         run: |
           set -euo pipefail
           VERSION="${{ github.event.inputs.tag || github.ref_name }}"
-          ASSET="skills-tui-${VERSION}-${{ matrix.asset_suffix }}.tar.gz"
-          tar -czf "$ASSET" skills-tui README.md LICENSE
+          ASSET="skillctl-${VERSION}-${{ matrix.asset_suffix }}.tar.gz"
+          tar -czf "$ASSET" skillctl README.md LICENSE
           shasum -a 256 "$ASSET" | awk '{print $1}' > "$ASSET.sha256"
 
       - name: Upload build artifact
@@ -58,8 +58,8 @@ jobs:
         with:
           name: ${{ matrix.asset_suffix }}
           path: |
-            skills-tui-${{ github.event.inputs.tag || github.ref_name }}-${{ matrix.asset_suffix }}.tar.gz
-            skills-tui-${{ github.event.inputs.tag || github.ref_name }}-${{ matrix.asset_suffix }}.tar.gz.sha256
+            skillctl-${{ github.event.inputs.tag || github.ref_name }}-${{ matrix.asset_suffix }}.tar.gz
+            skillctl-${{ github.event.inputs.tag || github.ref_name }}-${{ matrix.asset_suffix }}.tar.gz.sha256
 
   publish-release:
     needs: build
@@ -97,8 +97,8 @@ jobs:
           set -euo pipefail
           RELEASE_TAG="${{ github.event.inputs.tag || github.ref_name }}"
           VERSION="${RELEASE_TAG#v}"
-          ARM_ASSET="skills-tui-${RELEASE_TAG}-macos-arm64.tar.gz"
-          X64_ASSET="skills-tui-${RELEASE_TAG}-macos-x64.tar.gz"
+          ARM_ASSET="skillctl-${RELEASE_TAG}-macos-arm64.tar.gz"
+          X64_ASSET="skillctl-${RELEASE_TAG}-macos-x64.tar.gz"
           ARM_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/${ARM_ASSET}"
           X64_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/${X64_ASSET}"
           ARM_SHA="$(cat dist/${ARM_ASSET}.sha256)"
@@ -109,7 +109,7 @@ jobs:
             --arm-sha "$ARM_SHA" \
             --x64-url "$X64_URL" \
             --x64-sha "$X64_SHA" \
-            --output skills-tui.rb
+            --output skillctl.rb
 
       - name: Clone tap repository
         env:
@@ -124,7 +124,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p tap-repo/Formula
-          cp skills-tui.rb tap-repo/Formula/skills-tui.rb
+          cp skillctl.rb tap-repo/Formula/skillctl.rb
 
       - name: Regenerate tap README
         shell: bash
@@ -174,6 +174,6 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Formula/skills-tui.rb README.md
-          git commit -m "Update skills-tui to ${VERSION#v}"
+          git add Formula/skillctl.rb README.md
+          git commit -m "Update skillctl to ${VERSION#v}"
           git push origin HEAD:main

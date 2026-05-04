@@ -1,15 +1,25 @@
 {
-  "name": "skills-tui",
-  "module": "src/app.tsx",
+  "name": "skillctl",
+  "version": "0.2.0",
+  "description": "Repo/source/skill/provider control plane for user-level global AI agent skills.",
+  "module": "src/app.ts",
   "bin": {
-    "skills-tui": "src/app.tsx"
+    "skillctl": "src/app.ts"
   },
   "type": "module",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kassol/skillctl.git"
+  },
+  "homepage": "https://github.com/kassol/skillctl#readme",
+  "bugs": {
+    "url": "https://github.com/kassol/skillctl/issues"
+  },
   "scripts": {
-    "dev": "bun run src/app.tsx",
-    "build": "bun build --compile src/app.tsx --outfile skills-tui",
-    "build:all": "bun build --compile --target=bun-darwin-arm64 src/app.tsx --outfile skills-tui-darwin-arm64 && bun build --compile --target=bun-darwin-x64 src/app.tsx --outfile skills-tui-darwin-x64 && bun build --compile --target=bun-linux-x64 src/app.tsx --outfile skills-tui-linux-x64",
+    "dev": "bun run src/app.ts",
+    "build": "bun build --compile src/app.ts --outfile skillctl",
+    "build:all": "bun build --compile --target=bun-darwin-arm64 src/app.ts --outfile skillctl-darwin-arm64 && bun build --compile --target=bun-darwin-x64 src/app.ts --outfile skillctl-darwin-x64 && bun build --compile --target=bun-linux-x64 src/app.ts --outfile skillctl-linux-x64",
     "test": "vitest",
     "lint": "biome check src tests",
     "lint:fix": "biome check --write src tests",
@@ -18,19 +28,15 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.10",
     "@types/bun": "latest",
-    "@types/react": "^19.2.14",
-    "ink-testing-library": "^4.0.0",
+    "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
-  "peerDependencies": {
-    "typescript": "^6.0.2"
-  },
   "dependencies": {
+    "commander": "^14.0.2",
+    "diff": "^8.0.2",
+    "fast-glob": "^3.3.3",
     "gray-matter": "^4.0.3",
-    "ink": "^6.8.0",
-    "ink-text-input": "^6.0.0",
-    "react": "^19.2.4",
-    "react-devtools-core": "^7.0.1",
-    "zustand": "^5.0.12"
+    "picocolors": "^1.1.1",
+    "zod": "^4.1.13"
   }
 }
