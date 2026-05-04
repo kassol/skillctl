@@ -4,3 +4,12 @@ dist/
 /skillctl
 /skillctl-*
 *.tsbuildinfo
+
+# Agent harness/session artifacts (local only)
+/.claude-plugin/
+/config.json
+/events.jsonl
+/labels/
+/sessions/
+/statuses/
+/views.json
