@@ -125,6 +125,7 @@ jobs:
           set -euo pipefail
           mkdir -p tap-repo/Formula
           cp skillctl.rb tap-repo/Formula/skillctl.rb
+          rm -f tap-repo/Formula/skills-tui.rb
 
       - name: Regenerate tap README
         shell: bash
