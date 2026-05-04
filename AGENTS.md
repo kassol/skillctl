@@ -47,7 +47,7 @@ It does not manage project/workspace skills.
 - `bun run build` — compile to single `skillctl` binary
 
 ## Architecture Rules
-- Do not reintroduce Ink, React, Zustand, or TUI code.
+- Keep the project as a direct CLI; UI frameworks and interactive terminal interface code are out of scope.
 - Use `npx skills` as the source of truth for install/update/provider distribution.
 - Do not persist provider registry data in config; read it dynamically from `npx skills ls -g --json` and known provider dirs.
 - All write/destructive operations should support `--dry-run`; destructive operations should support `--yes`.

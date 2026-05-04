@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag to release, e.g. v0.1.0"
+        description: "Tag to release, e.g. v0.2.0"
         required: true
         type: string
 
@@ -125,7 +125,6 @@ jobs:
           set -euo pipefail
           mkdir -p tap-repo/Formula
           cp skillctl.rb tap-repo/Formula/skillctl.rb
-          rm -f tap-repo/Formula/skills-tui.rb
 
       - name: Regenerate tap README
         shell: bash

@@ -184,8 +184,6 @@ bun run build
 - Tests: vitest
 - Lint/format: Biome
 
-The previous Ink/Zustand TUI has been removed; `skillctl` is a direct command-line tool.
-
 ## License
 
 MIT
