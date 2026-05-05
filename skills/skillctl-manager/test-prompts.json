@@ -1,0 +1,35 @@
+{
+  "skill_name": "skillctl-manager",
+  "evals": [
+    {
+      "id": "guided-cleanup-one-step",
+      "prompt": "我想把本地 skills 变干净，一次只给我一个步骤，我贴输出后你再继续。",
+      "expected_output": "Agent starts with read-only checks, gives exactly one command group, waits for user feedback, and does not jump to destructive actions.",
+      "files": []
+    },
+    {
+      "id": "repo-casing-conflict",
+      "prompt": "skillctl repo list 里同一个 GitHub repo 出现了两种大小写，比如 Owner/skills 和 owner/skills，应该怎么修？",
+      "expected_output": "Agent verifies canonical casing through GitHub metadata, identifies affected skills, and fixes through npx skills reinstall from canonical repo rather than editing lockfile.",
+      "files": []
+    },
+    {
+      "id": "runtime-drift",
+      "prompt": "skillctl source status my-source 显示 RUNTIME_DRIFT example-skill，下一步怎么办？",
+      "expected_output": "Agent asks for skill status and promote dry-run diff, explains promote versus discard, and waits before writing.",
+      "files": []
+    },
+    {
+      "id": "provider-only-user-skill",
+      "prompt": "provider status 里有 PROVIDER_ONLY custom-workflow，这是我自己写的，还没进 source repo。",
+      "expected_output": "Agent preserves it, backs it up, stages a clean copy, installs it into global runtime, adopts it into the configured source, then explains commit/publish flow.",
+      "files": []
+    },
+    {
+      "id": "provider-only-stale-dir",
+      "prompt": "provider status 里有 PROVIDER_ONLY old-runtime-placeholder，它是一个空目录，可能是某个 agent 旧版本留下的。",
+      "expected_output": "Agent investigates before removal, checks whether it has SKILL.md or current config references, then uses npx skills remove or skillctl provider unlink only after evidence.",
+      "files": []
+    }
+  ]
+}

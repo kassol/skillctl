@@ -45,17 +45,29 @@ bun run build
 ```bash
 skillctl init
 
-skillctl source add my-skills \
-  --path ~/Workspace/my-skills \
-  --install-ref kassol/my-skills \
-  --remote git@github.com:kassol/my-skills.git \
+skillctl source add my-source \
+  --path ~/Workspace/skills-source \
+  --install-ref <owner>/<skills-repo> \
+  --remote git@github.com:<owner>/<skills-repo>.git \
   --agent '*'
 
 skillctl repo list
-skillctl source diff my-skills
-skillctl skill status my-skills apimart-image
-skillctl provider status --skill apimart-image
+skillctl source diff my-source
+skillctl skill status my-source example-skill
+skillctl provider status --skill example-skill
 ```
+
+## Agent companion skill
+
+This repository also ships an agent-facing skill for safe, step-by-step `skillctl` operations.
+
+Install it from this repository's GitHub slug:
+
+```bash
+npx --yes skills add kassol/skillctl -g --skill skillctl-manager --agent '*' -y
+```
+
+Use it when you want an agent to audit, clean, adopt, promote, discard, publish, or repair user-level global skills through `skillctl` and `npx skills` without hand-editing lockfiles.
 
 ## Commands
 
@@ -65,7 +77,7 @@ skillctl provider status --skill apimart-image
 skillctl config list
 skillctl config get runtime.globalStore
 skillctl config set runtime.npx "npx --yes skills"
-skillctl config unset sources.my-skills.remote
+skillctl config unset sources.my-source.remote
 skillctl config edit
 ```
 
@@ -77,10 +89,10 @@ Config is user-level only: `~/.config/skillctl/config.json`.
 
 ```bash
 skillctl repo list
-skillctl repo scan kassol/my-skills
-skillctl repo diff kassol/my-skills
-skillctl repo installed kassol/my-skills
-skillctl repo install-new kassol/my-skills --dry-run
+skillctl repo scan <owner>/<skills-repo>
+skillctl repo diff <owner>/<skills-repo>
+skillctl repo installed <owner>/<skills-repo>
+skillctl repo install-new <owner>/<skills-repo> --dry-run
 ```
 
 ### Source
@@ -88,12 +100,12 @@ skillctl repo install-new kassol/my-skills --dry-run
 `source` is a configured local canonical repo that `skillctl` may write to.
 
 ```bash
-skillctl source add my-skills --path ~/Workspace/my-skills --install-ref kassol/my-skills
+skillctl source add my-source --path ~/Workspace/skills-source --install-ref <owner>/<skills-repo>
 skillctl source list
-skillctl source scan my-skills
-skillctl source status my-skills
-skillctl source diff my-skills
-skillctl source remove my-skills
+skillctl source scan my-source
+skillctl source status my-source
+skillctl source diff my-source
+skillctl source remove my-source
 ```
 
 ### Skill lifecycle
@@ -101,12 +113,12 @@ skillctl source remove my-skills
 `skill` commands only operate on skills inside a configured source.
 
 ```bash
-skillctl skill status my-skills boyunji-writer
-skillctl skill dev my-skills boyunji-writer
-skillctl skill promote my-skills boyunji-writer
-skillctl skill adopt my-skills new-skill --install
-skillctl skill discard my-skills boyunji-writer
-skillctl skill publish my-skills boyunji-writer --push
+skillctl skill status my-source example-skill
+skillctl skill dev my-source example-skill
+skillctl skill promote my-source example-skill
+skillctl skill adopt my-source new-skill --install
+skillctl skill discard my-source example-skill
+skillctl skill publish my-source example-skill --push
 ```
 
 Write operations support `--dry-run` and `--yes` where confirmation is needed. `skillctl` never commits or pushes unless a command explicitly requests it (for example `skill publish --push`).
@@ -115,11 +127,11 @@ Write operations support `--dry-run` and `--yes` where confirmation is needed. `
 
 ```bash
 skillctl install list
-skillctl install list --repo kassol/my-skills
-skillctl install list --source my-skills
-skillctl install diff my-skills
-skillctl install sync-new my-skills
-skillctl install sync-new my-skills --from remote
+skillctl install list --repo <owner>/<skills-repo>
+skillctl install list --source my-source
+skillctl install diff my-source
+skillctl install sync-new my-source
+skillctl install sync-new my-source --from remote
 ```
 
 ### Provider sync
@@ -128,13 +140,13 @@ Provider data is read from `npx skills ls -g --json` and known provider director
 
 ```bash
 skillctl provider list
-skillctl provider list --skill boyunji-writer
+skillctl provider list --skill example-skill
 skillctl provider status
 skillctl provider status --provider claude-code
-skillctl provider status --source my-skills
-skillctl provider diff --skill boyunji-writer
-skillctl provider unlink --provider claude-code --skill boyunji-writer
-skillctl provider resync --provider claude-code --skill boyunji-writer
+skillctl provider status --source my-source
+skillctl provider diff --skill example-skill
+skillctl provider unlink --provider claude-code --skill example-skill
+skillctl provider resync --provider claude-code --skill example-skill
 ```
 
 `provider unlink` only removes the dedicated provider entry, such as `~/.claude/skills/<skill>`. It does not delete `~/.agents/skills/<skill>` or edit the lockfile. Native-global providers such as Pi read `~/.agents/skills` directly and cannot be unlinked per skill.
@@ -150,10 +162,10 @@ skillctl provider resync --provider claude-code --skill boyunji-writer
     "npx": "npx --yes skills"
   },
   "sources": {
-    "my-skills": {
-      "path": "/Users/kassol/Workspace/my-skills",
-      "remote": "git@github.com:kassol/my-skills.git",
-      "installRef": "kassol/my-skills",
+    "my-source": {
+      "path": "~/Workspace/skills-source",
+      "remote": "git@github.com:<owner>/<skills-repo>.git",
+      "installRef": "<owner>/<skills-repo>",
       "defaultAgents": ["*"],
       "publishBranch": "main",
       "fullDepth": false
