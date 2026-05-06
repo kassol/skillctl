@@ -76,7 +76,6 @@ export async function sourceDiff(
   const localSkills = await scanSkillRepo(source.path);
   const localMap = bySlug(localSkills);
   const runtimeOwned = runtimeForSource(runtime, source);
-  const runtimeMap = bySlug(runtime);
   const runtimeOwnedMap = bySlug(runtimeOwned);
 
   let remoteTotal: number | undefined;
@@ -102,14 +101,14 @@ export async function sourceDiff(
   }
 
   const notInstalled = sorted(
-    localSkills.map((skill) => skill.slug).filter((name) => !runtimeMap.has(name)),
+    localSkills.map((skill) => skill.slug).filter((name) => !runtimeOwnedMap.has(name)),
   );
   const installedOnly = sorted(
     runtimeOwned.map((skill) => skill.slug).filter((name) => !localMap.has(name)),
   );
   const runtimeDrift: string[] = [];
   for (const [name, localSkill] of localMap.entries()) {
-    const runtimeSkill = runtimeMap.get(name);
+    const runtimeSkill = runtimeOwnedMap.get(name);
     if (!runtimeSkill) continue;
     if (!(await directoriesEqual(localSkill.dir, runtimeSkill.dir))) runtimeDrift.push(name);
   }
@@ -145,12 +144,12 @@ export async function installDiff(
   const runtime = await scanGlobalStore(config.runtime.globalStore, lock);
   const sourceSkills = await scanSkillRepo(source.path);
   const sourceMap = bySlug(sourceSkills);
-  const runtimeMap = bySlug(runtime);
   const runtimeOwned = runtimeForSource(runtime, source);
+  const runtimeOwnedMap = bySlug(runtimeOwned);
 
   const runtimeDrift: string[] = [];
   for (const [name, sourceSkill] of sourceMap.entries()) {
-    const runtimeSkill = runtimeMap.get(name);
+    const runtimeSkill = runtimeOwnedMap.get(name);
     if (!runtimeSkill) continue;
     if (!(await directoriesEqual(sourceSkill.dir, runtimeSkill.dir))) runtimeDrift.push(name);
   }
@@ -159,7 +158,7 @@ export async function installDiff(
     sourceTotal: sourceSkills.length,
     installedTotal: runtimeOwned.length,
     notInstalled: sorted(
-      sourceSkills.map((skill) => skill.slug).filter((name) => !runtimeMap.has(name)),
+      sourceSkills.map((skill) => skill.slug).filter((name) => !runtimeOwnedMap.has(name)),
     ),
     installedOnly: sorted(
       runtimeOwned.map((skill) => skill.slug).filter((name) => !sourceMap.has(name)),
