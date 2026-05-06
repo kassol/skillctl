@@ -1,7 +1,7 @@
 ---
 name: skillctl-manager
 description: >-
-  Agent workflow for managing user-level global AI agent skills with skillctl and npx skills. Use whenever the user asks to clean up skills, audit installed skills, configure local skill sources, fix GitHub repo source casing, resolve source/runtime drift, adopt/promote/discard/publish skills, repair provider-only or broken provider entries, or wants step-by-step skill hygiene. Prefer this skill over ad-hoc lockfile edits; it enforces dry-runs, backups, source-of-truth checks, privacy-safe examples, and one-step-at-a-time cleanup.
+  Agent workflow for managing user-level global AI agent skills with skillctl and npx skills. Use whenever the user asks to create a new skill, develop and iterate on skills, clean up skills, audit installed skills, configure local skill sources, fix GitHub repo source casing, resolve source/runtime drift, adopt/promote/discard/publish skills, repair provider-only or broken provider entries, or wants step-by-step skill hygiene. Prefer this skill over ad-hoc lockfile edits; it enforces dry-runs, backups, source-of-truth checks, privacy-safe examples, and one-step-at-a-time cleanup.
 ---
 
 # skillctl-manager

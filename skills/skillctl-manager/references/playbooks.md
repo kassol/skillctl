@@ -197,7 +197,59 @@ skillctl source status <source-name>
 
 Success criteria: `Owned by source: yes`, `Drift: no`, source local count equals installed count for that source.
 
-## Playbook F: final health check
+## Playbook F: new skill development
+
+Use when the user wants to create a new skill from scratch in a configured source.
+
+1. Create skill directory and SKILL.md in source repo.
+
+```bash
+mkdir -p ~/Workspace/skills-source/<skill-name>
+```
+
+Write `SKILL.md` with valid frontmatter (`name`, `description` required). Add `references/` subdirectory if the skill needs bundled docs.
+
+2. Install from local source for testing.
+
+```bash
+skillctl skill dev <source-name> <skill-name>
+```
+
+3. Verify runtime installation.
+
+```bash
+skillctl skill status <source-name> <skill-name>
+```
+
+At this point the skill is functional but has no lockfile provenance. `source status` will show it as `NOT_INSTALLED`.
+
+4. Iterate: edit source files, then `skillctl skill dev` again to refresh runtime.
+
+5. Commit and push only after user approval.
+
+```bash
+git -C ~/Workspace/skills-source add <skill-name>
+git -C ~/Workspace/skills-source commit -m "Add <skill-name>"
+git -C ~/Workspace/skills-source push origin <branch>
+```
+
+6. Publish from remote installRef to establish lockfile provenance.
+
+```bash
+skillctl skill publish <source-name> <skill-name> --push --dry-run
+skillctl skill publish <source-name> <skill-name> --push
+```
+
+7. Verify.
+
+```bash
+skillctl skill status <source-name> <skill-name>
+skillctl source status <source-name>
+```
+
+Success criteria: `Owned by source: yes`, `Drift: no`, source local count equals installed count for that source.
+
+## Playbook G: final health check
 
 Run after cleanup.
 
