@@ -624,7 +624,11 @@ attachWriteOptions(
   installCommand
     .command("sync-new")
     .argument("<source>")
-    .option("--from <local|remote>", "Install from local source.path or remote installRef", "local")
+    .option(
+      "--from <local|remote>",
+      "Install from local source.path or remote installRef",
+      "remote",
+    )
     .option("--agent <agents...>", "Override agents")
     .description("Install source skills missing from the global store"),
 ).action(async (sourceName, options: CommonOptions & { from: "local" | "remote" }) => {

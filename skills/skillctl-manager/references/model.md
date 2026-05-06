@@ -35,7 +35,7 @@ Provider entries: ~/.claude/skills, ~/.codex/skills, ...
 
 | Status | Meaning | Typical action |
 |---|---|---|
-| `NOT_INSTALLED` | Source has a skill missing from runtime | `skillctl skill dev` or `skillctl install sync-new` |
+| `NOT_INSTALLED` | Source has a skill missing from runtime (or missing lockfile provenance) | `skillctl install sync-new` (defaults to remote installRef) or `skillctl skill publish` |
 | `INSTALLED_ONLY` | Runtime has a source-owned skill missing from source | Adopt, remove, or reinstall from correct source |
 | `RUNTIME_DRIFT` | Source and runtime content differ | Inspect diff; promote or discard |
 | `PROVIDER_ONLY` | Dedicated provider has entry missing from runtime | Adopt if user-owned; remove if stale |
