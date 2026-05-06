@@ -1,6 +1,6 @@
 {
   "name": "skillctl",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Repo/source/skill/provider control plane for user-level global AI agent skills.",
   "module": "src/app.ts",
   "bin": {
